@@ -1,0 +1,497 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if ad %}Редактирование объявления{% else %}Новое объявление{% endif %} - Brutal Wood 2025
+{% endblock %}
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    .photos-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .photo-upload-box {
+        border: 2px dashed var(--secondary-color);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(41,128,185,0.05);
+    }
+
+    .photo-upload-box:hover {
+        background: rgba(41,128,185,0.1);
+        transform: translateY(-2px);
+    }
+
+    .photo-preview {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .photo-preview img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .photo-preview .remove-photo {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: rgba(231,76,60,0.9);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .photo-preview .remove-photo:hover {
+        background: #e74c3c;
+        transform: scale(1.1);
+    }
+
+    .time-slots {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+
+    .time-slot {
+        position: relative;
+    }
+
+    .time-slot input[type="checkbox"] {
+        display: none;
+    }
+
+    .time-slot label {
+        display: block;
+        padding: 0.75rem;
+        text-align: center;
+        background: white;
+        border: 2px solid var(--secondary-color);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .time-slot input[type="checkbox"]:checked + label {
+        background: var(--gradient-primary);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(41,128,185,0.3);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        padding: 0.75rem;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.2rem rgba(41,128,185,0.25);
+    }
+
+    .btn-submit {
+        background: var(--gradient-primary);
+        border: none;
+        padding: 1rem 2rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        width: 100%;
+        margin-top: 2rem;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(41,128,185,0.4);
+    }
+
+    .custom-file-input {
+        border: 2px dashed var(--primary-color);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+    }
+    
+    .custom-file-input:hover,
+    .custom-file-input.dragover {
+        background-color: rgba(var(--primary-rgb), 0.05);
+        border-color: var(--primary-color);
+    }
+    
+    .custom-file-input input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+    
+    .upload-icon {
+        color: var(--primary-color);
+    }
+    
+    .upload-icon i {
+        font-size: 3rem;
+        margin-bottom: 10px;
+    }
+    
+    .photo-preview {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        height: 100px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .photo-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .btn-remove-photo {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background-color: rgba(0,0,0,0.6);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: all 0.2s;
+    }
+    
+    .btn-remove-photo:hover {
+        background-color: rgba(220,53,69,0.8);
+    }
+    
+    .time-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+    }
+    
+    .time-item label {
+        width: 100%;
+        padding: 6px 0;
+        font-size: 0.85rem;
+    }
+    
+    .schedule-card, .repost-card {
+        border: none;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    .schedule-card .card-header, .repost-card .card-header {
+        background-color: var(--light-bg-color);
+        color: var(--text-dark);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-gradient">
+            <h2 class="card-title mb-0">{{ title }}</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="row">
+                    <!-- Левая колонка -->
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label for="title" class="form-label">{{ form.title.label.text }} <span class="text-danger">*</span></label>
+                            {{ form.title(class="form-control " + ("is-invalid" if form.title.errors else ""), id="title", placeholder="Введите заголовок объявления") }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="description" class="form-label">{{ form.description.label.text }} <span class="text-danger">*</span></label>
+                            {{ form.description(class="form-control " + ("is-invalid" if form.description.errors else ""), id="description", rows="5", placeholder="Подробно опишите ваш товар или услугу") }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="price" class="form-label">{{ form.price.label.text }} <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                {{ form.price(class="form-control " + ("is-invalid" if form.price.errors else ""), id="price", placeholder="Укажите цену") }}
+                                <span class="input-group-text">₽</span>
+                                {% if form.price.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.price.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="categories" class="form-label">{{ form.categories.label.text }} <span class="text-danger">*</span></label>
+                            <div class="select-container">
+                                {{ form.categories(class="form-select " + ("is-invalid" if form.categories.errors else ""), id="categories") }}
+                                <small class="form-text text-muted">Удерживайте Ctrl (или Cmd на Mac) для выбора нескольких категорий</small>
+                                {% if form.categories.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.categories.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="address" class="form-label">{{ form.address.label.text }} <span class="text-danger">*</span></label>
+                            {{ form.address(class="form-control " + ("is-invalid" if form.address.errors else ""), id="address", placeholder="Укажите полный адрес") }}
+                            {% if form.address.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.address.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Правая колонка -->
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label for="manager_name" class="form-label">{{ form.manager_name.label.text }} <span class="text-danger">*</span></label>
+                            {{ form.manager_name(class="form-control " + ("is-invalid" if form.manager_name.errors else ""), id="manager_name", placeholder="Укажите имя контактного лица") }}
+                            {% if form.manager_name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.manager_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="contact_phone" class="form-label">{{ form.contact_phone.label.text }} <span class="text-danger">*</span></label>
+                            {{ form.contact_phone(class="form-control " + ("is-invalid" if form.contact_phone.errors else ""), id="contact_phone", placeholder="+7 (___) ___-__-__") }}
+                            {% if form.contact_phone.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.contact_phone.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.allow_email(class="form-check-input", id="allow_email") }}
+                                <label class="form-check-label" for="allow_email">{{ form.allow_email.label.text }}</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="publication_hours" class="form-label">{{ form.publication_hours.label.text }} <span class="text-danger">*</span></label>
+                            {{ form.publication_hours(class="form-select " + ("is-invalid" if form.publication_hours.errors else ""), id="publication_hours") }}
+                            <small class="form-text text-muted">Выберите часы, когда объявление будет публиковаться (удерживайте Ctrl/Cmd для выбора нескольких)</small>
+                            {% if form.publication_hours.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.publication_hours.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="repost_times" class="form-label">{{ form.repost_times.label.text }}</label>
+                            {{ form.repost_times(class="form-control " + ("is-invalid" if form.repost_times.errors else ""), id="repost_times", placeholder="Укажите количество репостов (0-10)") }}
+                            <small class="form-text text-muted">Количество повторных публикаций в выбранные часы</small>
+                            {% if form.repost_times.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.repost_times.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label for="schedule_start" class="form-label">{{ form.schedule_start.label.text }}</label>
+                            {{ form.schedule_start(class="form-control " + ("is-invalid" if form.schedule_start.errors else ""), id="schedule_start", type="date") }}
+                            <small class="form-text text-muted">Оставьте пустым для начала публикации сегодня</small>
+                            {% if form.schedule_start.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.schedule_start.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label for="schedule_end" class="form-label">{{ form.schedule_end.label.text }}</label>
+                            {{ form.schedule_end(class="form-control " + ("is-invalid" if form.schedule_end.errors else ""), id="schedule_end", type="date") }}
+                            <small class="form-text text-muted">Оставьте пустым для неограниченного срока публикации</small>
+                            {% if form.schedule_end.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.schedule_end.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-4">
+                            <label for="photos" class="form-label">{{ form.photos.label.text }}</label>
+                            <div class="custom-file-upload">
+                                {{ form.photos(class="form-control " + ("is-invalid" if form.photos.errors else ""), id="photos", multiple=True) }}
+                                <small class="form-text text-muted">Разрешенные форматы: jpg, jpeg, png. Максимум 10 изображений.</small>
+                                {% if form.photos.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.photos.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if ad and ad.photos %}
+                            <div class="mb-4">
+                                <label class="form-label">Текущие изображения:</label>
+                                <div class="row">
+                                    {% for photo in ad.photos %}
+                                        <div class="col-md-3 mb-3">
+                                            <div class="card">
+                                                <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" class="img-thumbnail" alt="Изображение {{ loop.index }}">
+                                                <div class="card-footer text-center">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="delete_photos" value="{{ photo.id }}" id="delete_photo_{{ photo.id }}">
+                                                        <label class="form-check-label" for="delete_photo_{{ photo.id }}">
+                                                            Удалить
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-4">
+                    {{ form.is_active(class="form-check-input", id="is_active") }}
+                    <label class="form-check-label" for="is_active">{{ form.is_active.label.text }}</label>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary me-md-2">Отмена</a>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Маска для телефона
+    document.addEventListener('DOMContentLoaded', function() {
+        const phoneInput = document.getElementById('contact_phone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 0 && value[0] !== '7') {
+                    value = '7' + value;
+                }
+                let formattedValue = '';
+                
+                if (value.length > 0) {
+                    formattedValue = '+' + value[0];
+                }
+                if (value.length > 1) {
+                    formattedValue += ' (' + value.substring(1, 4);
+                }
+                if (value.length > 4) {
+                    formattedValue += ') ' + value.substring(4, 7);
+                }
+                if (value.length > 7) {
+                    formattedValue += '-' + value.substring(7, 9);
+                }
+                if (value.length > 9) {
+                    formattedValue += '-' + value.substring(9, 11);
+                }
+                
+                e.target.value = formattedValue;
+            });
+        }
+    });
+</script>
+{% endblock %} 

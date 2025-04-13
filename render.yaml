@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: avito-ads
+    env: python
+    region: ohio
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      python init_db.py
+    startCommand: gunicorn avito_ads.app:app
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: avito-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: 0
+      - key: AVITO_CLIENT_ID
+        sync: false
+      - key: AVITO_CLIENT_SECRET
+        sync: false
+      - key: AVITO_ACCESS_TOKEN
+        sync: false
+      - key: SCHEDULER_INTERVAL
+        value: 5
+      - key: MAX_REPOSTS_PER_DAY
+        value: 10
+      - key: MIN_INTERVAL_BETWEEN_POSTS
+        value: 1
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_FILE
+        value: avito_scheduler.log
+      - key: UPLOAD_FOLDER
+        value: uploads
+      - key: PYTHON_VERSION
+        value: 3.11.7
+
+databases:
+  - name: avito-db
+    databaseName: avito_ads
+    user: avito_user
+    plan: free
+    region: ohio 

@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}{% if ad %}Редактирование{% else %}Добавление{% endif %} объявления - Avito Ads Manager{% endblock %}
+
+{% block styles %}
+<style>
+    .publication-hours {
+        margin-top: 15px;
+    }
+    .publication-hour-block {
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+    .hour-disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    .hour-enabled {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .photo-preview {
+        max-width: 150px;
+        max-height: 150px;
+        margin: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 5px;
+    }
+    .required-label::after {
+        content: " *";
+        color: red;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>{% if ad %}Редактирование{% else %}Добавление{% endif %} объявления</h1>
+    
+    <form method="post" enctype="multipart/form-data" id="adForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="title" class="form-label required-label">Заголовок</label>
+                    <input type="text" class="form-control" id="title" name="title" value="{{ ad.title if ad else '' }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="price" class="form-label required-label">Цена</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" value="{{ ad.price if ad else '' }}" required>
+                        <span class="input-group-text">₽</span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="address" class="form-label required-label">Адрес</label>
+                    <input type="text" class="form-control" id="address" name="address" value="{{ ad.address if ad else '' }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="manager_name" class="form-label required-label">Имя менеджера</label>
+                    <input type="text" class="form-control" id="manager_name" name="manager_name" value="{{ ad.manager_name if ad else '' }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="contact_phone" class="form-label required-label">Телефон</label>
+                    <input type="tel" class="form-control" id="contact_phone" name="contact_phone" value="{{ ad.contact_phone if ad else '' }}" required>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="allow_email" name="allow_email" {% if ad and ad.allow_email %}checked{% endif %}>
+                    <label class="form-check-label" for="allow_email">Разрешить связь по email</label>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="categories" class="form-label required-label">Категории</label>
+                    <select multiple class="form-select" id="categories" name="categories" required>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if ad and category in ad.categories %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description" class="form-label required-label">Описание</label>
+                    <textarea class="form-control" id="description" name="description" rows="5" required>{{ ad.description if ad else '' }}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="photos" class="form-label">Фотографии</label>
+                    <input type="file" class="form-control" id="photos" name="photos" multiple accept="image/*">
+                    
+                    {% if ad and ad.photo_paths %}
+                        <div class="mt-2">
+                            <p>Текущие фотографии:</p>
+                            <div class="d-flex flex-wrap">
+                                {% for photo in ad.photo_paths %}
+                                    <div class="text-center">
+                                        <img src="/{{ photo }}" alt="Photo" class="photo-preview">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">Загрузка новых фотографий заменит существующие.</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h4>Настройки расписания</h4>
+                
+                <div class="mb-3">
+                    <label for="schedule_start" class="form-label required-label">Дата начала</label>
+                    <input type="date" class="form-control" id="schedule_start" name="schedule_start" value="{{ ad.schedule_start.strftime('%Y-%m-%d') if ad and ad.schedule_start else '' }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="schedule_end" class="form-label required-label">Дата окончания</label>
+                    <input type="date" class="form-control" id="schedule_end" name="schedule_end" value="{{ ad.schedule_end.strftime('%Y-%m-%d') if ad and ad.schedule_end else '' }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="repost_times" class="form-label required-label">Количество репостов в день</label>
+                    <select class="form-select" id="repost_times" name="repost_times" required>
+                        <option value="1" {% if ad and ad.repost_times == 1 %}selected{% endif %}>1 раз</option>
+                        <option value="2" {% if ad and ad.repost_times == 2 %}selected{% endif %}>2 раза</option>
+                        <option value="3" {% if ad and ad.repost_times == 3 %}selected{% endif %}>3 раза</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if not ad or ad.is_active %}checked{% endif %}>
+                    <label class="form-check-label" for="is_active">Активно</label>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h4>Время публикации</h4>
+                
+                <div id="publicationHours" class="publication-hours">
+                    <div class="publication-hour-block" id="hour-1">
+                        <div class="mb-2">
+                            <label for="hour1" class="form-label required-label">Время публикации 1</label>
+                            <select class="form-select" id="hour1" name="hour1" required>
+                                {% for h in range(0, 24) %}
+                                    <option value="{{ h }}" {% if ad and ad.publication_hours and ad.publication_hours[0] == h %}selected{% endif %}>{{ "%02d"|format(h) }}:00</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="publication-hour-block hour-disabled" id="hour-2">
+                        <div class="mb-2">
+                            <label for="hour2" class="form-label required-label">Время публикации 2</label>
+                            <select class="form-select" id="hour2" name="hour2" disabled>
+                                {% for h in range(0, 24) %}
+                                    <option value="{{ h }}" {% if ad and ad.publication_hours and ad.publication_hours|length > 1 and ad.publication_hours[1] == h %}selected{% endif %}>{{ "%02d"|format(h) }}:00</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="publication-hour-block hour-disabled" id="hour-3">
+                        <div class="mb-2">
+                            <label for="hour3" class="form-label required-label">Время публикации 3</label>
+                            <select class="form-select" id="hour3" name="hour3" disabled>
+                                {% for h in range(0, 24) %}
+                                    <option value="{{ h }}" {% if ad and ad.publication_hours and ad.publication_hours|length > 2 and ad.publication_hours[2] == h %}selected{% endif %}>{{ "%02d"|format(h) }}:00</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <input type="hidden" id="publication_hours" name="publication_hours" value="{% if ad and ad.publication_hours %}{{ ad.publication_hours|tojson }}{% else %}[]{% endif %}">
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 mb-5 text-center">
+            <button type="submit" class="btn btn-primary">{% if ad %}Сохранить изменения{% else %}Добавить объявление{% endif %}</button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary ms-2">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обработка изменения количества репостов
+        const repostTimesSelect = document.getElementById('repost_times');
+        const hour2Block = document.getElementById('hour-2');
+        const hour3Block = document.getElementById('hour-3');
+        const hour2Select = document.getElementById('hour2');
+        const hour3Select = document.getElementById('hour3');
+        
+        function updateHourBlocks() {
+            const repostTimes = parseInt(repostTimesSelect.value);
+            
+            if (repostTimes >= 2) {
+                hour2Block.classList.remove('hour-disabled');
+                hour2Block.classList.add('hour-enabled');
+                hour2Select.disabled = false;
+            } else {
+                hour2Block.classList.remove('hour-enabled');
+                hour2Block.classList.add('hour-disabled');
+                hour2Select.disabled = true;
+            }
+            
+            if (repostTimes >= 3) {
+                hour3Block.classList.remove('hour-disabled');
+                hour3Block.classList.add('hour-enabled');
+                hour3Select.disabled = false;
+            } else {
+                hour3Block.classList.remove('hour-enabled');
+                hour3Block.classList.add('hour-disabled');
+                hour3Select.disabled = true;
+            }
+        }
+        
+        // Инициализация
+        updateHourBlocks();
+        
+        // Обработка изменения количества репостов
+        repostTimesSelect.addEventListener('change', updateHourBlocks);
+        
+        // Сбор часов публикации перед отправкой формы
+        document.getElementById('adForm').addEventListener('submit', function(e) {
+            const repostTimes = parseInt(repostTimesSelect.value);
+            const hour1 = parseInt(document.getElementById('hour1').value);
+            const hour2 = parseInt(document.getElementById('hour2').value);
+            const hour3 = parseInt(document.getElementById('hour3').value);
+            
+            const publicationHours = [hour1];
+            
+            if (repostTimes >= 2) {
+                publicationHours.push(hour2);
+            }
+            
+            if (repostTimes >= 3) {
+                publicationHours.push(hour3);
+            }
+            
+            document.getElementById('publication_hours').value = JSON.stringify(publicationHours);
+        });
+        
+        // Установка значений часов при загрузке формы для редактирования
+        const publicationHoursInput = document.getElementById('publication_hours');
+        if (publicationHoursInput.value && publicationHoursInput.value !== '[]') {
+            const hours = JSON.parse(publicationHoursInput.value);
+            if (hours.length > 0) {
+                document.getElementById('hour1').value = hours[0];
+            }
+            if (hours.length > 1) {
+                document.getElementById('hour2').value = hours[1];
+            }
+            if (hours.length > 2) {
+                document.getElementById('hour3').value = hours[2];
+            }
+        }
+    });
+</script>
+{% endblock %} 

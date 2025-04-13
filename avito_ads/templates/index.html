@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Мои объявления - Brutal Wood 2025{% endblock %}
+
+{% block content %}
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="animate__animated animate__fadeInDown">Мои объявления</h1>
+        <a href="{{ url_for('main.add_ad') }}" class="btn btn-primary animate__animated animate__fadeInRight">
+            <i class="fas fa-plus-circle me-2"></i>Добавить объявление
+        </a>
+    </div>
+
+    {% if ads %}
+    <div class="row">
+        {% for ad in ads %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 animate__animated animate__fadeIn" style="--animate-duration: {{ loop.index*0.1 + 0.5 }}s;" data-id="{{ ad.id }}">
+                {% if ad.get_photo_urls() %}
+                <div id="carousel-{{ ad.id }}" class="carousel slide card-img-container" data-bs-ride="carousel" data-bs-interval="false">
+                    <div class="carousel-inner">
+                        {% for photo_path in ad.get_photo_urls() %}
+                        {% set photo_filename = photo_path.split('/')[-1] %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ url_for('static', filename='uploads/' + photo_filename) }}" class="card-img-top" alt="{{ ad.title }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if ad.get_photo_urls()|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carousel-{{ ad.id }}" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carousel-{{ ad.id }}" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Следующий</span>
+                    </button>
+                    
+                    <div class="carousel-indicators">
+                        {% for photo_path in ad.get_photo_urls() %}
+                        <button type="button" data-bs-target="#carousel-{{ ad.id }}" data-bs-slide-to="{{ loop.index0 }}" 
+                            {% if loop.first %}class="active" aria-current="true"{% endif %} 
+                            aria-label="Слайд {{ loop.index }}"></button>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="card-img-placeholder">
+                    <i class="fas fa-image"></i>
+                </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{{ url_for('main.ad_detail', ad_id=ad.id) }}" class="text-decoration-none text-dark">
+                            {{ ad.title }}
+                        </a>
+                    </h5>
+                    <p class="card-text description">
+                        {{ ad.description|truncate(150) }}
+                    </p>
+                    <p class="price">{{ ad.price }} ₽</p>
+                    
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge {% if ad.is_active %}bg-success{% else %}bg-secondary{% endif %} me-2">
+                            {{ "Активно" if ad.is_active else "Неактивно" }}
+                        </span>
+                        <span class="badge bg-info">
+                            Перепубликаций: {{ ad.repost_times }}
+                        </span>
+                    </div>
+                    
+                    <p class="small text-muted">
+                        <i class="far fa-calendar-alt me-1"></i> Период: 
+                        {{ ad.schedule_start.strftime('%d.%m.%Y') }} - {{ ad.schedule_end.strftime('%d.%m.%Y') }}
+                    </p>
+                </div>
+                
+                <div class="card-footer">
+                    <div class="btn-group w-100">
+                        <a href="{{ url_for('main.ad_detail', ad_id=ad.id) }}" class="btn btn-outline-info">
+                            <i class="fas fa-eye me-1"></i>Просмотр
+                        </a>
+                        <a href="{{ url_for('main.edit_ad', ad_id=ad.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-1"></i>Изменить
+                        </a>
+                        <a href="{{ url_for('main.delete_ad', ad_id=ad.id) }}" class="btn btn-outline-danger" 
+                           onclick="return confirm('Вы уверены, что хотите удалить это объявление?')">
+                            <i class="fas fa-trash-alt me-1"></i>Удалить
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state animate__animated animate__fadeIn">
+        <div class="text-center py-5">
+            <i class="fas fa-clipboard-list empty-icon mb-3"></i>
+            <h3>У вас пока нет объявлений</h3>
+            <p class="text-muted">Создайте своё первое объявление для размещения на Avito</p>
+            <a href="{{ url_for('main.add_ad') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus-circle me-2"></i>Добавить объявление
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: none;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.card-img-container {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.card-img-top {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+}
+
+.carousel-item {
+    height: 200px;
+}
+
+.carousel-indicators {
+    margin-bottom: 0.25rem;
+}
+
+.carousel-indicators button {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.5);
+}
+
+.carousel-indicators button.active {
+    background-color: white;
+}
+
+.carousel-control-prev, .carousel-control-next {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.card:hover .carousel-control-prev, 
+.card:hover .carousel-control-next {
+    opacity: 0.8;
+}
+
+.card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.card-img-placeholder {
+    height: 200px;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-img-placeholder i {
+    font-size: 3rem;
+    color: #dee2e6;
+}
+
+.price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin-bottom: 0.5rem;
+}
+
+.description {
+    height: 80px;
+    overflow: hidden;
+    color: var(--text-color);
+}
+
+.empty-icon {
+    font-size: 5rem;
+    color: var(--secondary-color);
+    opacity: 0.5;
+}
+
+.empty-state {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.modal-content {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Спиннер стили */
+.spinner-border {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+.btn-danger:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление объявлениями{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-4 mb-0 animate__animated animate__fadeInLeft">
+                <i class="fas fa-bullhorn text-primary me-2"></i>Мои объявления
+            </h1>
+            <p class="text-muted animate__animated animate__fadeInLeft animate__delay-1s">
+                Управляйте своими объявлениями и контролируйте их размещение
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{{ url_for('main.add_ad') }}" class="btn btn-primary btn-lg animate__animated animate__fadeInRight">
+                <i class="fas fa-plus-circle me-2"></i>Новое объявление
+            </a>
+        </div>
+    </div>
+    
+    {% if ads %}
+        <div class="row">
+            {% for ad in ads %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 shadow animate__animated animate__fadeIn" style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0 text-truncate" title="{{ ad.title }}">
+                                {{ ad.title }}
+                            </h5>
+                            <span class="badge bg-primary rounded-pill">{{ ad.price }} ₽</span>
+                        </div>
+                        
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <p class="card-text text-truncate" title="{{ ad.description }}">
+                                    {{ ad.description }}
+                                </p>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="badge {% if ad.is_active %}bg-success{% else %}bg-secondary{% endif %} p-2">
+                                    {% if ad.is_active %}
+                                        <i class="fas fa-check-circle me-1"></i>Активно
+                                    {% else %}
+                                        <i class="fas fa-times-circle me-1"></i>Не активно
+                                    {% endif %}
+                                </span>
+                                
+                                <span class="small text-muted">
+                                    <i class="fas fa-sync-alt me-1"></i>{{ ad.repost_times }}x в день
+                                </span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="small mb-1">
+                                    <i class="fas fa-calendar-alt text-secondary me-1"></i>
+                                    <span class="fw-medium">Расписание:</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="small text-muted">
+                                        С {{ ad.schedule_start.strftime('%d.%m.%Y') }}
+                                    </div>
+                                    <div class="small text-muted">
+                                        По {{ ad.schedule_end.strftime('%d.%m.%Y') }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if ad.repost_hours is defined and ad.repost_hours %}
+                                <div class="mb-3">
+                                    <div class="small mb-1">
+                                        <i class="fas fa-clock text-secondary me-1"></i>
+                                        <span class="fw-medium">Часы публикации:</span>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for hour in ad.repost_hours %}
+                                            <span class="badge bg-light text-dark">{{ hour }}:00</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            {% if ad.last_published %}
+                                <div class="small text-muted">
+                                    <i class="fas fa-history me-1"></i>
+                                    Опубликовано: {{ ad.last_published.strftime('%d.%m.%Y %H:%M') }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-footer bg-white d-flex justify-content-between py-3">
+                            <a href="{{ url_for('main.edit_ad', ad_id=ad.id) }}" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" title="Редактировать">
+                                <i class="fas fa-edit me-1"></i>Редактировать
+                            </a>
+                            <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ ad.id }}" data-bs-toggle="tooltip" title="Удалить">
+                                <i class="fas fa-trash-alt me-1"></i>Удалить
+                            </button>
+                            
+                            <!-- Модальное окно для подтверждения удаления -->
+                            <div class="modal fade" id="deleteModal-{{ ad.id }}" tabindex="-1" aria-labelledby="deleteModalLabel-{{ ad.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel-{{ ad.id }}">
+                                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                                Подтверждение удаления
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Вы уверены, что хотите удалить объявление:</p>
+                                            <p class="fw-bold text-danger">"{{ ad.title }}"?</p>
+                                            <p class="small text-muted">Это действие нельзя будет отменить.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                <i class="fas fa-times me-1"></i>Отмена
+                                            </button>
+                                            <form action="{{ url_for('main.delete_ad', ad_id=ad.id) }}" method="POST">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="fas fa-trash-alt me-1"></i>Удалить
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-8">
+                <div class="card shadow-sm border-0 animate__animated animate__fadeIn">
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-bullhorn text-muted" style="font-size: 5rem;"></i>
+                        </div>
+                        <h2 class="mb-3">У вас пока нет объявлений</h2>
+                        <p class="text-muted mb-4">Создайте свое первое объявление и начните автоматизировать процесс размещения</p>
+                        <a href="{{ url_for('main.add_ad') }}" class="btn btn-primary btn-lg px-5">
+                            <i class="fas fa-plus-circle me-2"></i>Создать объявление
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Анимация при наведении на строки таблицы
+    document.querySelectorAll('tbody tr').forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.classList.add('animate__animated', 'animate__pulse');
+        });
+        row.addEventListener('mouseleave', function() {
+            this.classList.remove('animate__animated', 'animate__pulse');
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Мои объявления - Avito Ads Manager{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col">
+                <h1>Мои объявления</h1>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('add_ad') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Добавить объявление
+                </a>
+            </div>
+        </div>
+        
+        {% if ads %}
+            <div class="row">
+                {% for ad in ads %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card ad-card h-100">
+                            {% if ad.photo_paths and ad.photo_paths|length > 0 %}
+                                <img src="/{{ ad.photo_paths[0] }}" class="card-img-top ad-photo" alt="{{ ad.title }}">
+                            {% else %}
+                                <div class="card-img-top ad-photo bg-light d-flex align-items-center justify-content-center">
+                                    <span class="text-muted">Нет фото</span>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="card-body">
+                                <h5 class="card-title">{{ ad.title }}</h5>
+                                <p class="card-text text-primary fw-bold">{{ ad.price }} ₽</p>
+                                <p class="card-text small text-truncate">{{ ad.address }}</p>
+                                <p class="card-text small">
+                                    {% if ad.categories %}
+                                        {% for cat in ad.categories %}
+                                            <span class="badge bg-secondary">{{ cat.name }}</span>
+                                        {% endfor %}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            
+                            <div class="card-footer bg-white">
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">Создано: {{ ad.created_at.strftime('%d.%m.%Y') }}</small>
+                                    <div>
+                                        <a href="{{ url_for('edit_ad', ad_id=ad.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal{{ ad.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Модальное окно для подтверждения удаления -->
+                        <div class="modal fade" id="deleteModal{{ ad.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Подтверждение удаления</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Вы уверены, что хотите удалить объявление "{{ ad.title }}"?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                        <form action="{{ url_for('delete_ad', ad_id=ad.id) }}" method="post">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-danger">Удалить</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                У вас пока нет объявлений. <a href="{{ url_for('add_ad') }}">Добавить объявление</a>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %} 

@@ -1,0 +1,1 @@
+web: gunicorn avito_ads.app:app 

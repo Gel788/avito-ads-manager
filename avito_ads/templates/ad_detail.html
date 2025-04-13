@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ad.title }} - Brutal Wood 2025{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb" class="animate__animated animate__fadeIn">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Главная</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ ad.title }}</li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card mb-4 shadow-sm animate__animated animate__fadeInUp">
+        {% if ad.photo_paths and ad.photo_paths|length > 0 %}
+        <div id="adCarousel" class="carousel slide" data-bs-ride="carousel">
+          <div class="carousel-inner">
+            {% for photo_path in ad.photo_paths %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+              <img src="{{ url_for('static', filename=photo_path) }}" class="d-block w-100" alt="{{ ad.title }}" style="height: 400px; object-fit: contain;">
+            </div>
+            {% endfor %}
+          </div>
+          
+          {% if ad.photo_paths|length > 1 %}
+          <button class="carousel-control-prev" type="button" data-bs-target="#adCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Предыдущий</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#adCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Следующий</span>
+          </button>
+          
+          <div class="carousel-indicators">
+            {% for photo_path in ad.photo_paths %}
+            <button type="button" data-bs-target="#adCarousel" data-bs-slide-to="{{ loop.index0 }}" 
+                {% if loop.first %}class="active" aria-current="true"{% endif %} 
+                aria-label="Слайд {{ loop.index }}"></button>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center p-5 bg-light">
+          <i class="fas fa-image fa-5x text-muted"></i>
+          <p class="mt-3">Нет фотографий</p>
+        </div>
+        {% endif %}
+        
+        <div class="card-body">
+          <h1 class="card-title h3">{{ ad.title }}</h1>
+          <h2 class="card-subtitle mb-3 text-primary h4">{{ ad.price }} ₽</h2>
+          
+          <div class="mb-4">
+            <h3 class="h5">Описание</h3>
+            <p class="card-text">{{ ad.description }}</p>
+          </div>
+          
+          {% if ad.categories %}
+          <div class="mb-4">
+            <h3 class="h5">Категории</h3>
+            <div>
+              {% for category in ad.categories %}
+              <span class="badge bg-secondary me-1">{{ category.name }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          
+          <!-- Фотографии -->
+          {% if ad.get_photos() %}
+          <div class="row mt-4 mb-4">
+            <div class="col-12">
+              <h4>Фотографии</h4>
+              <div class="photos-gallery d-flex flex-wrap">
+                {% for photo_url in ad.get_photo_urls() %}
+                  <div class="photo-item m-2">
+                    <img src="{{ photo_url }}" alt="Фото {{ loop.index }}" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          <!-- Кнопки управления -->
+          <div class="row mt-4">
+            <div class="col-12">
+              <a href="{{ url_for('main.edit_ad', ad_id=ad.id) }}" class="btn btn-primary me-2">Редактировать</a>
+              <a href="{{ url_for('main.delete_ad', ad_id=ad.id) }}" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите удалить это объявление?')">Удалить</a>
+              <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Назад к списку</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card mb-4 shadow-sm animate__animated animate__fadeInRight">
+        <div class="card-header">
+          <h3 class="h5 mb-0">Информация</h3>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled">
+            <li class="mb-2">
+              <i class="fas fa-user text-primary me-2"></i>
+              <span class="text-muted">Контактное лицо:</span> 
+              <span class="fw-bold">{{ ad.manager_name }}</span>
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-phone text-primary me-2"></i>
+              <span class="text-muted">Телефон:</span> 
+              <span class="fw-bold">{{ ad.contact_phone }}</span>
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-map-marker-alt text-primary me-2"></i>
+              <span class="text-muted">Адрес:</span> 
+              <span class="fw-bold">{{ ad.address }}</span>
+            </li>
+            {% if ad.schedule_start and ad.schedule_end %}
+            <li class="mb-2">
+              <i class="fas fa-calendar-alt text-primary me-2"></i>
+              <span class="text-muted">Период размещения:</span><br>
+              <span class="fw-bold">{{ ad.schedule_start.strftime('%d.%m.%Y') }} - {{ ad.schedule_end.strftime('%d.%m.%Y') }}</span>
+            </li>
+            {% endif %}
+            <li class="mb-2">
+              <i class="fas fa-toggle-on text-primary me-2"></i>
+              <span class="text-muted">Статус:</span> 
+              <span class="badge {% if ad.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                {{ 'Активно' if ad.is_active else 'Неактивно' }}
+              </span>
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-clock text-primary me-2"></i>
+              <span class="text-muted">Создано:</span> 
+              <span class="fw-bold">{{ ad.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+            </li>
+            {% if ad.updated_at %}
+            <li class="mb-2">
+              <i class="fas fa-sync text-primary me-2"></i>
+              <span class="text-muted">Обновлено:</span> 
+              <span class="fw-bold">{{ ad.updated_at.strftime('%d.%m.%Y %H:%M') }}</span>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal для подтверждения удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Подтверждение удаления</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        Вы уверены, что хотите удалить объявление "{{ ad.title }}"?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <form action="{{ url_for('main.delete_ad', ad_id=ad.id) }}" method="post">
+          <button type="submit" class="btn btn-danger">Удалить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

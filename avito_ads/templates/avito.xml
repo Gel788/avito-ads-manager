@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Ads formatVersion="3" target="Avito.ru">
+    {% for ad in ads %}
+    <Ad>
+        <Id>{{ ad.id }}</Id>
+        <DateBegin>{{ ad.schedule_start.strftime('%Y-%m-%d') }}</DateBegin>
+        <DateEnd>{{ ad.schedule_end.strftime('%Y-%m-%d') }}</DateEnd>
+        <AdStatus>{{ 'Active' if ad.is_active else 'Inactive' }}</AdStatus>
+        <AllowEmail>{{ 'Да' if ad.allow_email else 'Нет' }}</AllowEmail>
+        <ManagerName>{{ ad.manager_name }}</ManagerName>
+        <ContactPhone>{{ ad.contact_phone }}</ContactPhone>
+        <Address>{{ ad.address }}</Address>
+        <Category>{{ ad.category }}</Category>
+        <Title>{{ ad.title }}</Title>
+        <Description>{{ ad.description }}</Description>
+        <Price>{{ ad.price }}</Price>
+        {% if ad.photo_paths %}
+        <Images>
+            {% for photo in ad.photo_paths %}
+            <Image url="{{ photo }}"/>
+            {% endfor %}
+        </Images>
+        {% endif %}
+        {% if ad.ad_metadata %}
+        <Params>
+            {% for key, value in ad.ad_metadata.items() %}
+            <Param name="{{ key }}">{{ value }}</Param>
+            {% endfor %}
+        </Params>
+        {% endif %}
+    </Ad>
+    {% endfor %}
+</Ads> 
