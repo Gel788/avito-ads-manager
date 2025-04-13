@@ -17,29 +17,39 @@ class Config:
     if not os.path.exists(INSTANCE_PATH):
         os.makedirs(INSTANCE_PATH, mode=0o777, exist_ok=True)
     
-    # Используем SQLite с файлом в директории проекта для решения проблем с правами доступа
-    DB_FILE = os.path.join(BASE_DIR, 'avito_database.sqlite3')
+    # Получаем URL базы данных
+    DATABASE_URL = os.getenv('DATABASE_URL')
     
-    # Создаем директорию и файл с полными правами доступа
-    try:
-        if os.path.exists(DB_FILE):
-            os.chmod(DB_FILE, 0o777)  # Полные права доступа
-    except Exception as e:
-        print(f"Ошибка при установке прав доступа для базы данных: {str(e)}")
+    # Если это Render.com (PostgreSQL)
+    if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://')
     
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DB_FILE
+    # Если нет URL базы данных, используем SQLite
+    if not DATABASE_URL:
+        DB_FILE = os.path.join(BASE_DIR, 'avito_database.sqlite3')
+        try:
+            if os.path.exists(DB_FILE):
+                os.chmod(DB_FILE, 0o777)  # Полные права доступа
+        except Exception as e:
+            print(f"Ошибка при установке прав доступа для базы данных: {str(e)}")
+        DATABASE_URL = 'sqlite:///' + DB_FILE
+    
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Настройки SQLite для улучшения работы с базой данных
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'connect_args': {
-            'timeout': 60,  # Увеличение таймаута соединения
-            'check_same_thread': False,  # Разрешить использование соединения в разных потоках
-            'isolation_level': None  # Отключение автоматических транзакций для повышения производительности
-        },
         'pool_pre_ping': True,  # Проверка соединения перед использованием
         'pool_recycle': 3600,   # Переподключение каждый час
     }
+    
+    # Добавляем специфичные настройки для SQLite
+    if DATABASE_URL and DATABASE_URL.startswith('sqlite:'):
+        SQLALCHEMY_ENGINE_OPTIONS['connect_args'] = {
+            'timeout': 60,  # Увеличение таймаута соединения
+            'check_same_thread': False,  # Разрешить использование соединения в разных потоках
+            'isolation_level': None  # Отключение автоматических транзакций для повышения производительности
+        }
     
     # Настройки загрузки файлов
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'avito_ads', 'static', 'uploads')
@@ -67,7 +77,7 @@ class Config:
     MIN_INTERVAL_BETWEEN_POSTS = int(os.getenv('MIN_INTERVAL_BETWEEN_POSTS', '1'))  # в часах
     
     # API Rate Limits
-    API_RATE_LIMIT = 100  # запросов в минуту
+    API_RATE_LIMIT = 100
     API_RATE_LIMIT_PERIOD = 60  # секунд
     
     # Настройки логирования
@@ -86,9 +96,7 @@ class Config:
     # Ad settings
     MAX_PHOTOS_PER_AD = 30
     MAX_DESCRIPTION_LENGTH = 2000
-    MAX_PHOTOS_PER_AD = MAX_PHOTOS_PER_AD
     MAX_TITLE_LENGTH = 100
-    MAX_PHOTO_SIZE = MAX_PHOTO_SIZE
     ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS
     MAX_REPOSTS_PER_DAY = MAX_REPOSTS_PER_DAY
     MIN_REPOST_INTERVAL = MIN_INTERVAL_BETWEEN_POSTS * 3600  # перевод часов в секунды 
